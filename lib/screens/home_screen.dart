@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:lottie/lottie.dart';
+import 'package:badges/badges.dart' as badges;
+import 'package:animate_do/animate_do.dart';
 import '../services/mock_service.dart';
 import '../models/lesson.dart';
 import '../widgets/lesson_card.dart';
 import 'lesson_detail.dart';
+import 'notification_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -27,8 +30,31 @@ class _HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('English Learner'),
+         flexibleSpace: Container(
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(
+        colors: [Color(0xFF4A90E2), Color(0xFF50E3C2)],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+    ),
+  ),
         actions: [
-          IconButton(onPressed: () {}, icon: const Icon(Icons.notifications_none)),
+          IconButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const NotificationScreen()),
+              );
+            },
+            icon: badges.Badge(
+              position: badges.BadgePosition.topEnd(top: -8, end: -6),
+              badgeContent: const Text(
+                "3",
+                style: TextStyle(color: Colors.white, fontSize: 10),
+              ),
+              child: const Icon(Icons.notifications_none),
+            ),
+          ),
         ],
       ),
       body: Padding(
@@ -42,16 +68,25 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Hello, Learner!', style: Theme.of(context).textTheme.headlineSmall),
+                      Text(
+                        'Hello, Learner!',
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
                       const SizedBox(height: 6),
-                      Text('Practice a little every day — progress is progress.', style: Theme.of(context).textTheme.bodyMedium),
+                      Text(
+                        'Practice a little every day — progress is progress.',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
                     ],
                   ),
                 ),
                 SizedBox(
                   width: 92,
                   height: 92,
-                  child: Lottie.asset('assets/animations/learning.json', fit: BoxFit.cover),
+                  child: Lottie.asset(
+                    'assets/animations/book.json',
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ],
             ),
@@ -81,9 +116,18 @@ class _HomeScreenState extends State<HomeScreen> {
                     separatorBuilder: (_, __) => const SizedBox(height: 12),
                     itemBuilder: (ctx, i) {
                       final lesson = lessons[i];
-                      return LessonCard(
-                        lesson: lesson,
-                        onTap: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => LessonDetailScreen(lesson: lesson))),
+                      return FadeInUp(
+                        // 👈 thêm animation
+                        duration: Duration(milliseconds: 300 + i * 100),
+                        child: LessonCard(
+                          lesson: lesson,
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  LessonDetailScreen(lesson: lesson),
+                            ),
+                          ),
+                        ),
                       );
                     },
                   );
@@ -105,7 +149,13 @@ class _SkillChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        CircleAvatar(radius: 26, backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.12), child: Icon(icon, color: Theme.of(context).colorScheme.primary)),
+        CircleAvatar(
+          radius: 26,
+          backgroundColor: Theme.of(
+            context,
+          ).colorScheme.primary.withOpacity(0.12),
+          child: Icon(icon, color: Theme.of(context).colorScheme.primary),
+        ),
         const SizedBox(height: 8),
         Text(skill, style: Theme.of(context).textTheme.bodySmall),
       ],
