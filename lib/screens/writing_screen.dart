@@ -8,34 +8,27 @@ class WritingScreen extends StatefulWidget {
 }
 
 class _WritingScreenState extends State<WritingScreen> {
-  final _textController = TextEditingController();
-  final String correctText = 'Hello, how are you?';
-
-  void _checkWriting() {
-    final userText = _textController.text.trim();
-    final isCorrect = userText.toLowerCase() == correctText.toLowerCase();
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(isCorrect ? 'Viết đúng!' : 'Sai, đáp án là: $correctText')),
-    );
-  }
+  final _ctrl = TextEditingController();
+  final _target = 'Hello, how are you?';
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Kỹ Năng Viết')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            const Text('Viết câu: "Hello, how are you?"'),
-            TextField(
-              controller: _textController,
-              decoration: const InputDecoration(labelText: 'Nhập câu của bạn'),
-            ),
-            ElevatedButton(onPressed: _checkWriting, child: const Text('Kiểm Tra')),
-          ],
+    return Column(
+      children: [
+        const Text('Write the sentence shown:'),
+        const SizedBox(height: 12),
+        Card(child: Padding(padding: const EdgeInsets.all(12.0), child: Text(_target))),
+        const SizedBox(height: 12),
+        TextField(controller: _ctrl, maxLines: 3, decoration: const InputDecoration(hintText: 'Type here...')),
+        const SizedBox(height: 12),
+        ElevatedButton(
+          onPressed: () {
+            final ok = _ctrl.text.trim().toLowerCase() == _target.toLowerCase();
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(ok ? 'Nice job!' : 'Not exact — keep practicing')));
+          },
+          child: const Text('Submit'),
         ),
-      ),
+      ],
     );
   }
 }

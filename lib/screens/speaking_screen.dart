@@ -11,60 +11,55 @@ class SpeakingScreen extends StatefulWidget {
 
 class _SpeakingScreenState extends State<SpeakingScreen> {
   final stt.SpeechToText _speech = stt.SpeechToText();
+  bool _isAvailable = false;
   bool _isListening = false;
-  String _text = 'Nhấn để nói';
-  final String targetWord = 'Hello';
+  String _lastWords = '';
 
   @override
   void initState() {
     super.initState();
-    _requestPermission();
+    _initSpeech();
   }
 
-  Future<void> _requestPermission() async {
+  Future<void> _initSpeech() async {
     await Permission.microphone.request();
+    final available = await _speech.initialize();
+    setState(() => _isAvailable = available);
   }
 
-  void _listen() async {
+  void _toggleListen() async {
+    if (!_isAvailable) return;
     if (!_isListening) {
-      bool available = await _speech.initialize();
-      if (available) {
-        setState(() => _isListening = true);
-        _speech.listen(onResult: (result) {
-          setState(() => _text = result.recognizedWords);
+      await _speech.listen(onResult: (r) {
+        setState(() {
+          _lastWords = r.recognizedWords;
         });
-      }
+      });
     } else {
-      setState(() => _isListening = false);
-      _speech.stop();
-      _checkPronunciation();
+      await _speech.stop();
     }
-  }
-
-  void _checkPronunciation() {
-    final isCorrect = _text.toLowerCase().contains(targetWord.toLowerCase());
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(isCorrect ? 'Phát âm đúng!' : 'Thử lại, từ mục tiêu là Hello')),
-    );
+    setState(() => _isListening = !_isListening);
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Kỹ Năng Nói')),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text('Nói từ "Hello" và kiểm tra:'),
-            Text(_text),
-            ElevatedButton(
-              onPressed: _listen,
-              child: Text(_isListening ? 'Dừng' : 'Bắt Đầu Nói'),
-            ),
-          ],
+    return Column(
+      children: [
+        const Text('Practice speaking — press and speak'),
+        const SizedBox(height: 12),
+        ElevatedButton.icon(
+          icon: Icon(_isListening ? Icons.mic_off : Icons.mic),
+          label: Text(_isListening ? 'Stop' : 'Start'),
+          onPressed: _toggleListen,
         ),
-      ),
+        const SizedBox(height: 12),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Text(_lastWords.isEmpty ? 'Your spoken words will appear here' : _lastWords),
+          ),
+        ),
+      ],
     );
   }
 }
