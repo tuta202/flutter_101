@@ -42,6 +42,7 @@ dependencies:
   just_audio: ^0.9.34
   badges: ^3.1.2
   animate_do: ^3.0.2
+  flutter_tts: ^3.8.3
 
 dev_dependencies:
   flutter_test:

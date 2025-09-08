@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:flutter_tts/flutter_tts.dart';
 import '../models/chat_message.dart';
 import '../services/mock_service.dart';
 
@@ -14,6 +15,7 @@ class SpeakingScreen extends StatefulWidget {
 class _SpeakingScreenState extends State<SpeakingScreen> {
   late Future<List<ChatMessage>> _future;
   final List<ChatMessage> _messages = [];
+  final FlutterTts _tts = FlutterTts();
   late stt.SpeechToText _speech;
   bool _isListening = false;
   String _lastWords = "";
@@ -22,8 +24,10 @@ class _SpeakingScreenState extends State<SpeakingScreen> {
   void initState() {
     super.initState();
     _speech = stt.SpeechToText();
-    _future =
-        Provider.of<MockService>(context, listen: false).fetchChatMessages();
+    _future = Provider.of<MockService>(
+      context,
+      listen: false,
+    ).fetchChatMessages();
   }
 
   void _toggleMic() async {
@@ -31,62 +35,95 @@ class _SpeakingScreenState extends State<SpeakingScreen> {
       bool available = await _speech.initialize();
       if (available) {
         setState(() => _isListening = true);
-        _speech.listen(onResult: (res) {
-          setState(() => _lastWords = res.recognizedWords);
-        });
+        _speech.listen(
+          onResult: (res) {
+            setState(() => _lastWords = res.recognizedWords);
+          },
+        );
       }
     } else {
       setState(() => _isListening = false);
       _speech.stop();
       if (_lastWords.isNotEmpty) {
         setState(() {
-          _messages.add(ChatMessage(
-            id: DateTime.now().millisecondsSinceEpoch,
-            message: _lastWords,
-            role: "user",
-          ));
+          _messages.add(
+            ChatMessage(
+              id: DateTime.now().millisecondsSinceEpoch,
+              message: _lastWords,
+              role: "user",
+            ),
+          );
           _lastWords = "";
         });
       }
     }
   }
 
+  Future<void> _speak(String text) async {
+    await _tts.setLanguage("en-US"); // vi-VN
+    await _tts.setPitch(1.0);
+    await _tts.setSpeechRate(0.9);
+    await _tts.setVolume(1.0);
+    await _tts.speak(text);
+  }
+
   Widget _buildBubble(ChatMessage msg, ThemeData theme) {
     final isUser = msg.role == "user";
-    return Align(
-      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
-        constraints: const BoxConstraints(maxWidth: 280),
-        decoration: BoxDecoration(
-          color: isUser ? theme.colorScheme.primary : Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(16),
-            topRight: const Radius.circular(16),
-            bottomLeft:
-                isUser ? const Radius.circular(16) : const Radius.circular(4),
-            bottomRight:
-                isUser ? const Radius.circular(4) : const Radius.circular(16),
-          ),
-          boxShadow: isUser
-              ? []
-              : [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 6,
-                    offset: const Offset(0, 3),
-                  ),
-                ],
+
+    // Bubble container
+    final bubble = Container(
+      margin: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+      constraints: const BoxConstraints(maxWidth: 260),
+      decoration: BoxDecoration(
+        color: isUser ? theme.colorScheme.primary : Colors.white,
+        borderRadius: BorderRadius.only(
+          topLeft: const Radius.circular(16),
+          topRight: const Radius.circular(16),
+          bottomLeft: isUser
+              ? const Radius.circular(16)
+              : const Radius.circular(4),
+          bottomRight: isUser
+              ? const Radius.circular(4)
+              : const Radius.circular(16),
         ),
-        child: Text(
-          msg.message,
-          style: TextStyle(
-            color: isUser ? Colors.white : Colors.black87,
-            fontSize: 15,
-          ),
+        boxShadow: isUser
+            ? []
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 6,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+      ),
+      child: Text(
+        msg.message,
+        style: TextStyle(
+          color: isUser ? Colors.white : Colors.black87,
+          fontSize: 15,
         ),
       ),
+    );
+
+    // Speaker icon
+    final speakerIcon = IconButton(
+      icon: Icon(
+        Icons.volume_up,
+        size: 22,
+        color: isUser ? theme.colorScheme.primary : theme.colorScheme.secondary,
+      ),
+      onPressed: () => _speak(msg.message),
+    );
+
+    return Row(
+      mainAxisAlignment: isUser
+          ? MainAxisAlignment.end
+          : MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: isUser
+          ? [speakerIcon, bubble] // user: icon bên trái bubble
+          : [bubble, speakerIcon], // assistant: icon bên phải bubble
     );
   }
 
@@ -133,10 +170,7 @@ class _SpeakingScreenState extends State<SpeakingScreen> {
       floatingActionButton: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              theme.colorScheme.primary,
-              theme.colorScheme.secondary,
-            ],
+            colors: [theme.colorScheme.primary, theme.colorScheme.secondary],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
